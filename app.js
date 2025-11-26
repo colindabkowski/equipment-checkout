@@ -183,6 +183,10 @@ class EquipmentCheckoutSystem {
         // Check if it's equipment
         const equip = this.equipment.find(e => e.barcode === barcode);
         if (equip) {
+            // Show 3D model of the equipment
+            const equipmentName = equip.description || equip.barcode;
+            this.show3DModel(equip.type, equipmentName);
+
             // Check if equipment is currently checked out
             const activeTransaction = this.transactions.find(t =>
                 t.equipmentBarcode === barcode && t.status === 'out'
@@ -1057,6 +1061,478 @@ class EquipmentCheckoutSystem {
         this.renderHistoryTable();
         this.renderReports();
         document.getElementById('barcode-input').focus();
+    }
+
+    // ===== 3D MODEL VIEWER =====
+
+    show3DModel(equipmentType, equipmentName) {
+        if (typeof Model3DViewer !== 'undefined') {
+            const viewer = new Model3DViewer();
+            viewer.show(equipmentType, equipmentName);
+        }
+    }
+}
+
+// ===== 3D MODEL VIEWER CLASS =====
+
+class Model3DViewer {
+    constructor() {
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.model = null;
+        this.animationId = null;
+        this.container = document.getElementById('model-viewer-canvas');
+        this.overlay = document.getElementById('model-viewer-overlay');
+    }
+
+    show(equipmentType, equipmentName) {
+        // Initialize Three.js scene
+        this.setupScene();
+
+        // Create the 3D model based on equipment type
+        this.model = this.createModel(equipmentType);
+        this.scene.add(this.model);
+
+        // Update label
+        document.querySelector('.model-viewer-label').textContent = equipmentName;
+
+        // Show overlay
+        this.overlay.classList.add('active');
+
+        // Start animation
+        this.animate();
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => this.hide(), 3000);
+
+        // Click to close
+        this.overlay.onclick = () => this.hide();
+    }
+
+    setupScene() {
+        // Create scene
+        this.scene = new THREE.Scene();
+
+        // Create camera
+        this.camera = new THREE.PerspectiveCamera(
+            45,
+            this.container.offsetWidth / this.container.offsetHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 5, 15);
+        this.camera.lookAt(0, 0, 0);
+
+        // Create renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+        this.renderer.setClearColor(0x000000, 0);
+        this.container.innerHTML = '';
+        this.container.appendChild(this.renderer.domElement);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 10);
+        this.scene.add(directionalLight);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight2.position.set(-10, -10, -10);
+        this.scene.add(directionalLight2);
+    }
+
+    createModel(equipmentType) {
+        const group = new THREE.Group();
+
+        switch (equipmentType.toLowerCase()) {
+            case 'tripod':
+                return this.createTripod();
+            case 'microphone':
+                return this.createMicrophone();
+            case 'camera':
+                return this.createCamera();
+            case 'phone mount':
+                return this.createPhoneMount();
+            case 'light kit':
+                return this.createLightKit();
+            case 'audio recorder':
+                return this.createAudioRecorder();
+            case 'lens':
+                return this.createLens();
+            default:
+                return this.createGenericEquipment();
+        }
+    }
+
+    createTripod() {
+        const group = new THREE.Group();
+        const material = new THREE.MeshPhongMaterial({ color: 0x333333 });
+
+        // Center column
+        const columnGeometry = new THREE.CylinderGeometry(0.2, 0.2, 8, 8);
+        const column = new THREE.Mesh(columnGeometry, material);
+        column.position.y = 0;
+        group.add(column);
+
+        // Top platform
+        const platformGeometry = new THREE.CylinderGeometry(1, 1, 0.3, 16);
+        const platformMaterial = new THREE.MeshPhongMaterial({ color: 0x555555 });
+        const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+        platform.position.y = 4.15;
+        group.add(platform);
+
+        // Three legs
+        const legMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+        for (let i = 0; i < 3; i++) {
+            const angle = (i * Math.PI * 2) / 3;
+            const legGeometry = new THREE.CylinderGeometry(0.15, 0.1, 7, 8);
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+
+            leg.position.x = Math.cos(angle) * 2;
+            leg.position.z = Math.sin(angle) * 2;
+            leg.position.y = -1.5;
+            leg.rotation.z = Math.cos(angle) * 0.3;
+            leg.rotation.x = Math.sin(angle) * 0.3;
+
+            group.add(leg);
+
+            // Foot
+            const footGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const foot = new THREE.Mesh(footGeometry, new THREE.MeshPhongMaterial({ color: 0xff6600 }));
+            foot.position.x = Math.cos(angle) * 3.5;
+            foot.position.z = Math.sin(angle) * 3.5;
+            foot.position.y = -5;
+            group.add(foot);
+        }
+
+        return group;
+    }
+
+    createMicrophone() {
+        const group = new THREE.Group();
+
+        // Handle
+        const handleGeometry = new THREE.CylinderGeometry(0.4, 0.4, 5, 16);
+        const handleMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.y = -1;
+        group.add(handle);
+
+        // Microphone head (mesh/grille)
+        const headGeometry = new THREE.SphereGeometry(1.2, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const headMaterial = new THREE.MeshPhongMaterial({
+            color: 0x666666,
+            wireframe: true,
+            wireframeLinewidth: 2
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2;
+        group.add(head);
+
+        // Inner sphere for depth
+        const innerGeometry = new THREE.SphereGeometry(1.1, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const innerMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+        const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+        inner.position.y = 2;
+        group.add(inner);
+
+        // XLR connector at bottom
+        const xlrGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.8, 16);
+        const xlrMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+        const xlr = new THREE.Mesh(xlrGeometry, xlrMaterial);
+        xlr.position.y = -3.9;
+        group.add(xlr);
+
+        return group;
+    }
+
+    createCamera() {
+        const group = new THREE.Group();
+
+        // Camera body
+        const bodyGeometry = new THREE.BoxGeometry(4, 3, 2);
+        const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        group.add(body);
+
+        // Lens
+        const lensGeometry = new THREE.CylinderGeometry(1.5, 1.5, 3, 32);
+        const lensMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
+        const lens = new THREE.Mesh(lensGeometry, lensMaterial);
+        lens.rotation.z = Math.PI / 2;
+        lens.position.x = 3;
+        group.add(lens);
+
+        // Lens glass
+        const glassGeometry = new THREE.CylinderGeometry(1.3, 1.3, 0.2, 32);
+        const glassMaterial = new THREE.MeshPhongMaterial({
+            color: 0x4444ff,
+            transparent: true,
+            opacity: 0.6,
+            shininess: 100
+        });
+        const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+        glass.rotation.z = Math.PI / 2;
+        glass.position.x = 4.4;
+        group.add(glass);
+
+        // Viewfinder
+        const viewfinderGeometry = new THREE.BoxGeometry(1.5, 1, 1);
+        const viewfinder = new THREE.Mesh(viewfinderGeometry, bodyMaterial);
+        viewfinder.position.set(-1.5, 1.5, -0.5);
+        group.add(viewfinder);
+
+        // Flash
+        const flashGeometry = new THREE.BoxGeometry(2, 0.5, 0.5);
+        const flashMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+        flash.position.y = 2;
+        group.add(flash);
+
+        return group;
+    }
+
+    createPhoneMount() {
+        const group = new THREE.Group();
+
+        // Base clamp
+        const baseGeometry = new THREE.BoxGeometry(1, 0.5, 3);
+        const material = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const base = new THREE.Mesh(baseGeometry, material);
+        group.add(base);
+
+        // Vertical arms
+        const armGeometry = new THREE.BoxGeometry(0.3, 4, 0.3);
+        const leftArm = new THREE.Mesh(armGeometry, material);
+        leftArm.position.set(-1.5, 2, 0);
+        group.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeometry, material);
+        rightArm.position.set(1.5, 2, 0);
+        group.add(rightArm);
+
+        // Top connecting bar
+        const topGeometry = new THREE.BoxGeometry(3.3, 0.3, 0.3);
+        const top = new THREE.Mesh(topGeometry, material);
+        top.position.y = 4;
+        group.add(top);
+
+        // Grip pads
+        const padGeometry = new THREE.BoxGeometry(0.2, 3, 2);
+        const padMaterial = new THREE.MeshPhongMaterial({ color: 0xff6600 });
+        const leftPad = new THREE.Mesh(padGeometry, padMaterial);
+        leftPad.position.set(-1.6, 2, 0);
+        group.add(leftPad);
+
+        const rightPad = new THREE.Mesh(padGeometry, padMaterial);
+        rightPad.position.set(1.6, 2, 0);
+        group.add(rightPad);
+
+        // Screw/knob
+        const knobGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16);
+        const knobMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+        const knob = new THREE.Mesh(knobGeometry, knobMaterial);
+        knob.rotation.z = Math.PI / 2;
+        knob.position.set(0, -0.5, 1.8);
+        group.add(knob);
+
+        return group;
+    }
+
+    createLightKit() {
+        const group = new THREE.Group();
+
+        // Light panel
+        const panelGeometry = new THREE.BoxGeometry(6, 4, 0.5);
+        const panelMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+        const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+        group.add(panel);
+
+        // LED grid
+        const ledMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffaa,
+            emissive: 0xffff00,
+            emissiveIntensity: 0.5
+        });
+
+        for (let x = -2; x <= 2; x += 1) {
+            for (let y = -1.5; y <= 1.5; y += 1) {
+                const ledGeometry = new THREE.CircleGeometry(0.2, 16);
+                const led = new THREE.Mesh(ledGeometry, ledMaterial);
+                led.position.set(x, y, 0.26);
+                group.add(led);
+            }
+        }
+
+        // Handle
+        const handleGeometry = new THREE.BoxGeometry(0.8, 5, 0.8);
+        const handleMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.y = -4;
+        group.add(handle);
+
+        // Diffuser frame
+        const frameGeometry = new THREE.BoxGeometry(6.2, 4.2, 0.1);
+        const frameMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.3
+        });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame.position.z = 0.3;
+        group.add(frame);
+
+        return group;
+    }
+
+    createAudioRecorder() {
+        const group = new THREE.Group();
+
+        // Main body
+        const bodyGeometry = new THREE.BoxGeometry(2, 5, 1);
+        const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        group.add(body);
+
+        // Screen
+        const screenGeometry = new THREE.BoxGeometry(1.8, 1.2, 0.05);
+        const screenMaterial = new THREE.MeshPhongMaterial({
+            color: 0x88ccff,
+            emissive: 0x4488ff,
+            emissiveIntensity: 0.3
+        });
+        const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+        screen.position.set(0, 1.5, 0.51);
+        group.add(screen);
+
+        // Microphones on top
+        const micGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8);
+        const micMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+
+        const leftMic = new THREE.Mesh(micGeometry, micMaterial);
+        leftMic.position.set(-0.4, 3.2, 0);
+        leftMic.rotation.z = -0.3;
+        group.add(leftMic);
+
+        const rightMic = new THREE.Mesh(micGeometry, micMaterial);
+        rightMic.position.set(0.4, 3.2, 0);
+        rightMic.rotation.z = 0.3;
+        group.add(rightMic);
+
+        // Buttons
+        const buttonMaterial = new THREE.MeshPhongMaterial({ color: 0xff3333 });
+        for (let i = 0; i < 3; i++) {
+            const buttonGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+            const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
+            button.rotation.x = Math.PI / 2;
+            button.position.set(-0.5 + i * 0.5, -0.5, 0.51);
+            group.add(button);
+        }
+
+        return group;
+    }
+
+    createLens() {
+        const group = new THREE.Group();
+
+        // Lens barrel
+        const barrelGeometry = new THREE.CylinderGeometry(2, 2.2, 5, 32);
+        const barrelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
+        const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+        barrel.rotation.x = Math.PI / 2;
+        group.add(barrel);
+
+        // Front glass element
+        const frontGlassGeometry = new THREE.CylinderGeometry(1.9, 1.9, 0.2, 32);
+        const glassMaterial = new THREE.MeshPhongMaterial({
+            color: 0x6666ff,
+            transparent: true,
+            opacity: 0.6,
+            shininess: 100
+        });
+        const frontGlass = new THREE.Mesh(frontGlassGeometry, glassMaterial);
+        frontGlass.rotation.x = Math.PI / 2;
+        frontGlass.position.z = 2.6;
+        group.add(frontGlass);
+
+        // Rear glass element
+        const rearGlass = new THREE.Mesh(frontGlassGeometry, glassMaterial);
+        rearGlass.rotation.x = Math.PI / 2;
+        rearGlass.position.z = -2.6;
+        group.add(rearGlass);
+
+        // Focus ring
+        const ringGeometry = new THREE.TorusGeometry(2.3, 0.2, 16, 32);
+        const ringMaterial = new THREE.MeshPhongMaterial({ color: 0xff6600 });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = Math.PI / 2;
+        group.add(ring);
+
+        // Brand text simulation (simple ring)
+        const brandGeometry = new THREE.TorusGeometry(2.1, 0.1, 16, 32);
+        const brandMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const brand = new THREE.Mesh(brandGeometry, brandMaterial);
+        brand.rotation.x = Math.PI / 2;
+        brand.position.z = 1.5;
+        group.add(brand);
+
+        return group;
+    }
+
+    createGenericEquipment() {
+        const group = new THREE.Group();
+
+        // Generic box with details
+        const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+        const boxMaterial = new THREE.MeshPhongMaterial({ color: 0x667eea });
+        const box = new THREE.Mesh(boxGeometry, boxMaterial);
+        group.add(box);
+
+        // Add some detail cylinders
+        const detailGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3.1, 16);
+        const detailMaterial = new THREE.MeshPhongMaterial({ color: 0x764ba2 });
+
+        const detail1 = new THREE.Mesh(detailGeometry, detailMaterial);
+        detail1.rotation.z = Math.PI / 2;
+        group.add(detail1);
+
+        const detail2 = new THREE.Mesh(detailGeometry, detailMaterial);
+        detail2.rotation.x = Math.PI / 2;
+        group.add(detail2);
+
+        return group;
+    }
+
+    animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        // Rotate the model
+        if (this.model) {
+            this.model.rotation.y += 0.02;
+        }
+
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    hide() {
+        // Stop animation
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+
+        // Hide overlay
+        this.overlay.classList.remove('active');
+
+        // Clean up
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+
+        // Clear container
+        this.container.innerHTML = '';
     }
 }
 
