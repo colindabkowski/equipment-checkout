@@ -475,6 +475,17 @@ class EquipmentCheckoutSystem {
         document.getElementById('expected-return').value = '';
         document.getElementById('barcode-input').value = '';
         document.getElementById('barcode-input').focus();
+
+        // Hide 3D model viewer
+        const modelOverlay = document.getElementById('model-viewer-overlay');
+        if (modelOverlay && modelOverlay.classList.contains('active')) {
+            modelOverlay.classList.remove('active');
+            // Stop any running animation
+            const canvas = document.getElementById('model-viewer-canvas');
+            if (canvas) {
+                canvas.innerHTML = '';
+            }
+        }
     }
 
     // ===== MESSAGES =====
@@ -1103,11 +1114,8 @@ class Model3DViewer {
         // Start animation
         this.animate();
 
-        // Auto-hide after 3 seconds
-        setTimeout(() => this.hide(), 3000);
-
-        // Click to close
-        this.overlay.onclick = () => this.hide();
+        // Keep rotating continuously - no auto-hide
+        // User can dismiss by completing the transaction
     }
 
     setupScene() {
