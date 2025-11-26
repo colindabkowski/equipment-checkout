@@ -616,8 +616,13 @@ tr:hover {
 }
 
 #model-viewer-canvas {
-    width: 100%;
-    height: 100%;
+    width: 300px;
+    height: 300px;
+}
+
+#model-viewer-canvas canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .model-viewer-label {

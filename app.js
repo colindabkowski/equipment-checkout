@@ -1098,21 +1098,24 @@ class Model3DViewer {
     }
 
     show(equipmentType, equipmentName) {
-        // Initialize Three.js scene
-        this.setupScene();
-
-        // Create the 3D model based on equipment type
-        this.model = this.createModel(equipmentType);
-        this.scene.add(this.model);
+        // Show overlay FIRST so container has dimensions
+        this.overlay.classList.add('active');
 
         // Update label
         document.querySelector('.model-viewer-label').textContent = equipmentName;
 
-        // Show overlay
-        this.overlay.classList.add('active');
+        // Small delay to ensure DOM updates
+        setTimeout(() => {
+            // Initialize Three.js scene
+            this.setupScene();
 
-        // Start animation
-        this.animate();
+            // Create the 3D model based on equipment type
+            this.model = this.createModel(equipmentType);
+            this.scene.add(this.model);
+
+            // Start animation
+            this.animate();
+        }, 10);
 
         // Keep rotating continuously - no auto-hide
         // User can dismiss by completing the transaction
@@ -1122,10 +1125,14 @@ class Model3DViewer {
         // Create scene
         this.scene = new THREE.Scene();
 
+        // Use fixed size of 300x300
+        const width = 300;
+        const height = 300;
+
         // Create camera
         this.camera = new THREE.PerspectiveCamera(
             45,
-            this.container.offsetWidth / this.container.offsetHeight,
+            width / height,
             0.1,
             1000
         );
@@ -1134,7 +1141,7 @@ class Model3DViewer {
 
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
+        this.renderer.setSize(width, height);
         this.renderer.setClearColor(0x000000, 0);
         this.container.innerHTML = '';
         this.container.appendChild(this.renderer.domElement);
