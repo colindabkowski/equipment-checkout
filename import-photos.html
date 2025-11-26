@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Photo Import - Equipment System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #5568d3;
+        }
+        .upload-area.dragover {
+            background: #d1ecf1;
+            border-color: #0c5460;
+        }
+        .file-input {
+            display: none;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .results {
+            margin-top: 30px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .match-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        .match-item.no-match {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .match-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        .match-info {
+            flex: 1;
+        }
+        .match-filename {
+            font-weight: 600;
+            color: #333;
+        }
+        .match-student {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .match-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .match-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .match-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .summary {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #bee5eb;
+        }
+        .summary h3 {
+            margin: 0 0 10px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Batch Photo Import</h1>
+        <p class="subtitle">Upload student photos in bulk. Files should be named: Lastname_Firstname#.jpg</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div style="font-size: 60px; margin-bottom: 10px;">📁</div>
+            <h3>Click to select photos or drag & drop here</h3>
+            <p style="color: #666; margin-top: 10px;">You can select multiple photos at once</p>
+            <p style="color: #999; font-size: 12px;">Supported formats: JPG, PNG, GIF (max 500KB each)</p>
+        </div>
+
+        <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
+
+        <div id="summary" class="summary" style="display: none;">
+            <h3>Processing Photos...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+            </div>
+            <p id="progressText">0 of 0 photos processed</p>
+        </div>
+
+        <div id="results" class="results"></div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-primary" id="importBtn" style="display: none;">Import Matched Photos</button>
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">Go to Main App</button>
+        </div>
+    </div>
+
+    <script>
+        let photosToImport = [];
+        let matchResults = [];
+
+        // Load students from localStorage
+        const students = JSON.parse(localStorage.getItem('students') || '[]');
+
+        // Setup drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const summary = document.getElementById('summary');
+            const results = document.getElementById('results');
+            const importBtn = document.getElementById('importBtn');
+
+            summary.style.display = 'block';
+            results.innerHTML = '';
+            photosToImport = [];
+            matchResults = [];
+
+            const totalFiles = files.length;
+            let processedFiles = 0;
+
+            document.getElementById('progressText').textContent = `0 of ${totalFiles} photos processed`;
+
+            Array.from(files).forEach((file, index) => {
+                // Check file size
+                if (file.size > 500000) {
+                    matchResults.push({
+                        filename: file.name,
+                        status: 'error',
+                        message: 'File too large (max 500KB)'
+                    });
+                    processedFiles++;
+                    updateProgress(processedFiles, totalFiles);
+                    return;
+                }
+
+                // Parse filename: Lastname_Firstname#.jpg
+                const filename = file.name;
+                const nameMatch = filename.match(/^([^_]+)_([^0-9#]+)/i);
+
+                if (!nameMatch) {
+                    matchResults.push({
+                        filename: filename,
+                        status: 'error',
+                        message: 'Invalid filename format (use Lastname_Firstname#.jpg)'
+                    });
+                    processedFiles++;
+                    updateProgress(processedFiles, totalFiles);
+                    return;
+                }
+
+                const lastName = nameMatch[1].trim();
+                const firstName = nameMatch[2].trim();
+                const fullName = `${firstName} ${lastName}`;
+
+                // Find matching student
+                const matchedStudent = students.find(s => {
+                    const studentName = s.name.toLowerCase();
+                    const searchName = fullName.toLowerCase();
+                    return studentName === searchName ||
+                           studentName.includes(searchName) ||
+                           searchName.includes(studentName);
+                });
+
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const photoData = e.target.result;
+
+                    if (matchedStudent) {
+                        photosToImport.push({
+                            student: matchedStudent,
+                            photo: photoData,
+                            filename: filename
+                        });
+
+                        matchResults.push({
+                            filename: filename,
+                            status: 'success',
+                            student: matchedStudent.name,
+                            photo: photoData,
+                            message: `Matched to: ${matchedStudent.name}`
+                        });
+                    } else {
+                        matchResults.push({
+                            filename: filename,
+                            status: 'error',
+                            parsedName: fullName,
+                            photo: photoData,
+                            message: `No student found for: ${fullName}`
+                        });
+                    }
+
+                    processedFiles++;
+                    updateProgress(processedFiles, totalFiles);
+
+                    if (processedFiles === totalFiles) {
+                        displayResults();
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updateProgress(current, total) {
+            const percent = (current / total) * 100;
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = `${current} of ${total} photos processed`;
+        }
+
+        function displayResults() {
+            const results = document.getElementById('results');
+            const importBtn = document.getElementById('importBtn');
+            const summary = document.getElementById('summary');
+
+            const successCount = matchResults.filter(r => r.status === 'success').length;
+            const errorCount = matchResults.filter(r => r.status === 'error').length;
+
+            summary.innerHTML = `
+                <h3>Processing Complete!</h3>
+                <p style="margin: 10px 0;">
+                    ✅ <strong>${successCount}</strong> photos matched<br>
+                    ❌ <strong>${errorCount}</strong> photos not matched
+                </p>
+            `;
+
+            let html = '';
+            matchResults.forEach(result => {
+                const isSuccess = result.status === 'success';
+                html += `
+                    <div class="match-item ${isSuccess ? '' : 'no-match'}">
+                        <img src="${result.photo}" class="match-photo" alt="Student photo">
+                        <div class="match-info">
+                            <div class="match-filename">${result.filename}</div>
+                            <div class="match-student">${result.message}</div>
+                        </div>
+                        <div class="match-status ${result.status}">${isSuccess ? '✓ Matched' : '✗ No Match'}</div>
+                    </div>
+                `;
+            });
+
+            results.innerHTML = html;
+
+            if (successCount > 0) {
+                importBtn.style.display = 'inline-block';
+            }
+        }
+
+        document.getElementById('importBtn').addEventListener('click', () => {
+            if (confirm(`Import ${photosToImport.length} photos to matched students?`)) {
+                importPhotos();
+            }
+        });
+
+        function importPhotos() {
+            let students = JSON.parse(localStorage.getItem('students') || '[]');
+
+            photosToImport.forEach(item => {
+                const student = students.find(s => s.barcode === item.student.barcode);
+                if (student) {
+                    student.photo = item.photo;
+                }
+            });
+
+            localStorage.setItem('students', JSON.stringify(students));
+
+            alert(`✅ Successfully imported ${photosToImport.length} photos!\n\nClick "Go to Main App" to see the updated students.`);
+
+            document.getElementById('importBtn').textContent = '✓ Photos Imported!';
+            document.getElementById('importBtn').disabled = true;
+            document.getElementById('importBtn').style.background = '#28a745';
+        }
+    </script>
+</body>
+</html>

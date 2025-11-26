@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Students - Backend</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status div {
+            margin: 5px 0;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .summary {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px solid #c3e6cb;
+        }
+        .summary h3 {
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Backend Student Import</h1>
+        <p>This will import 19 students into the database using their full names as barcode IDs.</p>
+
+        <button class="btn" onclick="runImport()">Run Import</button>
+        <button class="btn btn-secondary" onclick="window.location.href='index.html'">Go to Main App</button>
+
+        <div id="status" class="status" style="display: none;"></div>
+        <div id="summary" class="summary" style="display: none;"></div>
+    </div>
+
+    <script>
+        const studentsToImport = [
+            { name: "Aleksandr Chwesik", barcode: "Aleksandr Chwesik" },
+            { name: "Brooke Cotton", barcode: "Brooke Cotton" },
+            { name: "Maxx McCarthy", barcode: "Maxx McCarthy" },
+            { name: "Ella Puister", barcode: "Ella Puister" },
+            { name: "Brianna Tyczka", barcode: "Brianna Tyczka" },
+            { name: "Sarah Wolf", barcode: "Sarah Wolf" },
+            { name: "Morgan Enser", barcode: "Morgan Enser" },
+            { name: "Michael Johnson", barcode: "Michael Johnson" },
+            { name: "Campbell Jones", barcode: "Campbell Jones" },
+            { name: "Brayden Khork", barcode: "Brayden Khork" },
+            { name: "Jessica Okoniewski", barcode: "Jessica Okoniewski" },
+            { name: "Elena Rivera", barcode: "Elena Rivera" },
+            { name: "Kaitlyn Watson", barcode: "Kaitlyn Watson" },
+            { name: "Hailee Erny", barcode: "Hailee Erny" },
+            { name: "Sara Garrett", barcode: "Sara Garrett" },
+            { name: "Aubrey Hayes", barcode: "Aubrey Hayes" },
+            { name: "Jack Kolarich", barcode: "Jack Kolarich" },
+            { name: "Jayla Romeo", barcode: "Jayla Romeo" },
+            { name: "Jade Sivertson", barcode: "Jade Sivertson" }
+        ];
+
+        function runImport() {
+            const statusDiv = document.getElementById('status');
+            const summaryDiv = document.getElementById('summary');
+
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div><strong>Starting import...</strong></div>';
+
+            // Load existing students from localStorage
+            let existingStudents = JSON.parse(localStorage.getItem('students') || '[]');
+
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            studentsToImport.forEach(student => {
+                // Check if student already exists
+                if (existingStudents.some(s => s.barcode === student.barcode)) {
+                    statusDiv.innerHTML += `<div>⏭️  Skipped: ${student.name} (already exists)</div>`;
+                    skippedCount++;
+                } else {
+                    // Add new student
+                    existingStudents.push({
+                        name: student.name,
+                        barcode: student.barcode,
+                        email: '',
+                        photo: null,
+                        addedDate: new Date().toISOString()
+                    });
+                    statusDiv.innerHTML += `<div style="color: green;">✅ Added: ${student.name}</div>`;
+                    addedCount++;
+                }
+            });
+
+            // Save back to localStorage
+            localStorage.setItem('students', JSON.stringify(existingStudents));
+
+            // Show summary
+            summaryDiv.style.display = 'block';
+            summaryDiv.innerHTML = `
+                <h3>Import Complete!</h3>
+                <p>✅ Students added: <strong>${addedCount}</strong></p>
+                <p>⏭️  Students skipped: <strong>${skippedCount}</strong></p>
+                <p>📊 Total students in database: <strong>${existingStudents.length}</strong></p>
+                <p style="margin-top: 15px; font-size: 14px;">Click "Go to Main App" above to view the students!</p>
+            `;
+        }
+    </script>
+</body>
+</html>

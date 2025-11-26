@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Student Emails - Backend</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status div {
+            margin: 5px 0;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .summary {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px solid #c3e6cb;
+        }
+        .summary h3 {
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Backend Email Import</h1>
+        <p>This will import student emails and match them to existing student accounts.</p>
+
+        <button class="btn" onclick="runImport()">Run Import</button>
+        <button class="btn btn-secondary" onclick="window.location.href='index.html'">Go to Main App</button>
+
+        <div id="status" class="status" style="display: none;"></div>
+        <div id="summary" class="summary" style="display: none;"></div>
+    </div>
+
+    <script>
+        const emailsToImport = [
+            { email: "AChwesik28@aldenschools.org", lastName: "Chwesik", firstName: "Aleksandr" },
+            { email: "BCotton26@aldenschools.org", lastName: "Cotton", firstName: "Brooke" },
+            { email: "MEnser26@aldenschools.org", lastName: "Enser", firstName: "Morgan" },
+            { email: "HErny29@aldenschools.org", lastName: "Erny", firstName: "Hailee" },
+            { email: "SGarrett26@aldenschools.org", lastName: "Garrett", firstName: "Sara" },
+            { email: "AHayes28@aldenschools.org", lastName: "Hayes", firstName: "Aubrey" },
+            { email: "MJohnson27@aldenschools.org", lastName: "Johnson", firstName: "Michael" },
+            { email: "CJones26@aldenschools.org", lastName: "Jones", firstName: "Campbell" },
+            { email: "BKhork27@aldenschools.org", lastName: "Khork", firstName: "Brayden" },
+            { email: "JKolarich28@aldenschools.org", lastName: "Kolarich", firstName: "Jack" },
+            { email: "MMcCarthy28@aldenschools.org", lastName: "McCarthy", firstName: "Maxx" },
+            { email: "JOkoniewski27@aldenschools.org", lastName: "Okoniewski", firstName: "Jessica" },
+            { email: "EPuister28@aldenschools.org", lastName: "Puister", firstName: "Ella" },
+            { email: "ERivera26@aldenschools.org", lastName: "Rivera", firstName: "Elena" },
+            { email: "jromeo25@aldenschools.org", lastName: "Romeo", firstName: "Jayla" },
+            { email: "JSivertson26@aldenschools.org", lastName: "Sivertson", firstName: "Jade" },
+            { email: "BTyczka29@aldenschools.org", lastName: "Tyczka", firstName: "Brianna" },
+            { email: "KWatson27@aldenschools.org", lastName: "Watson", firstName: "Kaitlyn" },
+            { email: "SWolf28@aldenschools.org", lastName: "Wolf", firstName: "Sarah" }
+        ];
+
+        function runImport() {
+            const statusDiv = document.getElementById('status');
+            const summaryDiv = document.getElementById('summary');
+
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div><strong>Starting email import...</strong></div>';
+
+            // Load existing students from localStorage
+            let students = JSON.parse(localStorage.getItem('students') || '[]');
+
+            let updatedCount = 0;
+            let notFoundCount = 0;
+
+            emailsToImport.forEach(emailData => {
+                const fullName = `${emailData.firstName} ${emailData.lastName}`;
+
+                // Find matching student by name
+                const student = students.find(s =>
+                    s.name.toLowerCase() === fullName.toLowerCase()
+                );
+
+                if (student) {
+                    student.email = emailData.email;
+                    statusDiv.innerHTML += `<div style="color: green;">✅ Updated: ${fullName} → ${emailData.email}</div>`;
+                    updatedCount++;
+                } else {
+                    statusDiv.innerHTML += `<div style="color: red;">❌ Not found: ${fullName}</div>`;
+                    notFoundCount++;
+                }
+            });
+
+            // Save back to localStorage
+            localStorage.setItem('students', JSON.stringify(students));
+
+            // Show summary
+            summaryDiv.style.display = 'block';
+            summaryDiv.innerHTML = `
+                <h3>Email Import Complete!</h3>
+                <p>✅ Students updated: <strong>${updatedCount}</strong></p>
+                <p>❌ Students not found: <strong>${notFoundCount}</strong></p>
+                <p>📊 Total students in database: <strong>${students.length}</strong></p>
+                <p style="margin-top: 15px; font-size: 14px;">Click "Go to Main App" above to view the updated students!</p>
+            `;
+        }
+    </script>
+</body>
+</html>

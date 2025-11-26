@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Check-In/Out System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="wacs-logo.png" alt="WACS Logo" class="logo">
+                <div class="header-text">
+                    <h1>📦 Equipment Check-In/Out System</h1>
+                    <p class="subtitle">Scan barcodes to manage equipment loans</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-tab="scan">Scan</button>
+            <button class="tab-btn" data-tab="history">History</button>
+            <button class="tab-btn" data-tab="students">Students</button>
+            <button class="tab-btn" data-tab="equipment">Equipment</button>
+            <button class="tab-btn" data-tab="reports">Reports</button>
+        </div>
+
+        <!-- SCAN TAB -->
+        <div id="scan-tab" class="tab-content active">
+            <div class="card scan-section">
+                <div class="scan-icon">📷</div>
+                <h2>Scan Student Pass or Equipment</h2>
+                <p style="color: #666; margin: 15px 0;">Use your USB barcode scanner to scan</p>
+
+                <input type="text"
+                       id="barcode-input"
+                       class="barcode-input"
+                       placeholder="Ready to scan..."
+                       autofocus>
+
+                <div id="status-message" class="status-message"></div>
+
+                <div id="checkout-info" class="checkout-info">
+                    <h3>Transaction Details</h3>
+                    <div id="transaction-details"></div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="expected-return">Expected Return Date & Time</label>
+                        <input type="datetime-local" id="expected-return" class="notes-input" style="min-height: auto;">
+                    </div>
+                    <textarea id="notes-input" class="notes-input" placeholder="Add notes (optional)..."></textarea>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="confirm-checkout-btn">Confirm Check-Out</button>
+                        <button class="btn btn-secondary" id="cancel-transaction-btn">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="checkin-info" class="checkout-info">
+                    <h3>Check-In Equipment</h3>
+                    <div id="checkin-details"></div>
+                    <textarea id="checkin-notes-input" class="notes-input" placeholder="Add check-in notes (optional)..."></textarea>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" id="confirm-checkin-btn">Confirm Check-In</button>
+                        <button class="btn btn-secondary" id="cancel-checkin-btn">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="student-options" class="checkout-info">
+                    <h3>Student: <span id="student-options-name"></span></h3>
+                    <p style="color: #666; margin-bottom: 15px;">This student has equipment checked out. What would you like to do?</p>
+                    <div id="student-checkout-list"></div>
+                    <div class="action-buttons" style="margin-top: 20px;">
+                        <button class="btn btn-success" id="checkin-all-btn">Check In All Items</button>
+                        <button class="btn btn-primary" id="proceed-checkout-btn">Check Out More Equipment</button>
+                        <button class="btn btn-secondary" id="cancel-student-options-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS SECTION ON SCAN PAGE -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>Quick Stats</h2>
+                <div class="stats-grid" id="scan-stats-container"></div>
+
+                <h3 style="margin-top: 30px;">Currently Checked Out</h3>
+                <div id="scan-checked-out-container"></div>
+            </div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="history-tab" class="tab-content">
+            <div class="card">
+                <h2>Transaction History</h2>
+                <input type="text" id="history-search" class="search-box" placeholder="Search by student name, equipment, or ID...">
+
+                <div class="filter-tabs">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="out">Checked Out</button>
+                    <button class="filter-btn" data-filter="overdue">Overdue</button>
+                    <button class="filter-btn" data-filter="in">Returned</button>
+                </div>
+
+                <div id="history-table-container"></div>
+            </div>
+        </div>
+
+        <!-- STUDENTS TAB -->
+        <div id="students-tab" class="tab-content">
+            <div class="card">
+                <h2>Student Management</h2>
+                <button class="btn btn-primary" id="show-add-student-btn">+ Add Student</button>
+
+                <div id="add-student-form" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 id="student-form-title">Add New Student</h3>
+                    <input type="hidden" id="student-edit-mode" value="">
+                    <input type="hidden" id="student-original-barcode" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Student Name *</label>
+                            <input type="text" id="student-name" placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label>Barcode ID *</label>
+                            <input type="text" id="student-barcode" placeholder="Scan or enter barcode">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="student-email" placeholder="student@school.edu">
+                    </div>
+                    <div class="form-group">
+                        <label>Photo (Optional)</label>
+                        <input type="file" id="student-photo" accept="image/*">
+                        <div id="photo-preview" style="margin-top: 10px;"></div>
+                    </div>
+                    <button class="btn btn-success" id="student-submit-btn">Save Student</button>
+                    <button class="btn btn-secondary" id="student-cancel-btn">Cancel</button>
+                </div>
+
+                <input type="text" id="student-search" class="search-box" placeholder="Search students..." style="margin-top: 20px;">
+                <div id="students-table-container"></div>
+            </div>
+        </div>
+
+        <!-- EQUIPMENT TAB -->
+        <div id="equipment-tab" class="tab-content">
+            <div class="card">
+                <h2>Equipment Management</h2>
+                <button class="btn btn-primary" id="show-add-equipment-btn">+ Add Equipment</button>
+                <button class="btn btn-secondary" id="export-equipment-csv-btn">Export Labels CSV</button>
+
+                <div id="add-equipment-form" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 id="equipment-form-title">Add New Equipment</h3>
+                    <input type="hidden" id="equipment-edit-mode" value="">
+                    <input type="hidden" id="equipment-original-barcode" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Equipment Type *</label>
+                            <select id="equipment-type">
+                                <option value="Microphone">Microphone</option>
+                                <option value="Tripod">Tripod</option>
+                                <option value="Camera">Camera</option>
+                                <option value="Light Kit">Light Kit</option>
+                                <option value="Audio Recorder">Audio Recorder</option>
+                                <option value="Lens">Lens</option>
+                                <option value="Phone Mount">Phone Mount</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Barcode ID *</label>
+                            <input type="text" id="equipment-barcode" placeholder="Scan or enter barcode">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="equipment-description" placeholder="e.g., Sony Wireless Mic">
+                    </div>
+                    <button class="btn btn-success" id="equipment-submit-btn">Save Equipment</button>
+                    <button class="btn btn-secondary" id="equipment-cancel-btn">Cancel</button>
+                </div>
+
+                <input type="text" id="equipment-search" class="search-box" placeholder="Search equipment..." style="margin-top: 20px;">
+                <div id="equipment-table-container"></div>
+            </div>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="reports-tab" class="tab-content">
+            <div class="card">
+                <h2>Reports & Statistics</h2>
+                <div class="stats-grid" id="stats-container"></div>
+
+                <h3 style="margin-top: 30px;">Currently Checked Out</h3>
+                <div id="checked-out-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
