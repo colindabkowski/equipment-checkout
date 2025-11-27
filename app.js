@@ -1125,9 +1125,9 @@ class Model3DViewer {
         // Create scene
         this.scene = new THREE.Scene();
 
-        // Use fixed size of 400x400
-        const width = 400;
-        const height = 400;
+        // Use container dimensions
+        const width = this.container.offsetWidth || 500;
+        const height = this.container.offsetHeight || 500;
 
         // Create camera
         this.camera = new THREE.PerspectiveCamera(
