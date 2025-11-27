@@ -219,6 +219,16 @@ class EquipmentCheckoutSystem {
         document.getElementById('checkin-info').style.display = 'none';
         document.getElementById('student-options').style.display = 'none';
 
+        // Hide 3D model viewer from any previous transaction
+        const modelOverlay = document.getElementById('model-viewer-overlay');
+        if (modelOverlay && modelOverlay.classList.contains('active')) {
+            modelOverlay.classList.remove('active');
+            const canvas = document.getElementById('model-viewer-canvas');
+            if (canvas) {
+                canvas.innerHTML = '';
+            }
+        }
+
         // Show large student photo in the status message area
         const statusMsg = document.getElementById('status-message');
         if (student.photo) {
@@ -246,6 +256,16 @@ class EquipmentCheckoutSystem {
 
     showStudentCheckoutOptions(student, checkouts) {
         this.currentStudentCheckouts = checkouts;
+
+        // Hide 3D model viewer from any previous transaction
+        const modelOverlay = document.getElementById('model-viewer-overlay');
+        if (modelOverlay && modelOverlay.classList.contains('active')) {
+            modelOverlay.classList.remove('active');
+            const canvas = document.getElementById('model-viewer-canvas');
+            if (canvas) {
+                canvas.innerHTML = '';
+            }
+        }
 
         // Update student name and photo
         if (student.photo) {
