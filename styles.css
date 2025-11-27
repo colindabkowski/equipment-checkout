@@ -592,12 +592,12 @@ tr:hover {
 /* 3D Model Viewer */
 .model-viewer-overlay {
     display: none;
-    position: absolute;
-    right: -340px;
+    position: fixed;
+    right: 50px;
     top: 50%;
     transform: translateY(-50%);
-    width: 300px;
-    height: 300px;
+    width: 400px;
+    height: 400px;
     animation: fadeIn 0.3s ease-in-out;
     z-index: 1000;
 }
@@ -611,15 +611,14 @@ tr:hover {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    border: 6px solid #667eea;
 }
 
 #model-viewer-canvas {
-    width: 300px;
-    height: 300px;
+    width: 400px;
+    height: 400px;
 }
 
 #model-viewer-canvas canvas {
@@ -629,14 +628,14 @@ tr:hover {
 
 .model-viewer-label {
     position: absolute;
-    bottom: 10px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.95);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: 700;
     color: #667eea;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     max-width: 90%;
@@ -663,11 +662,15 @@ tr:hover {
 @media (max-width: 768px) {
     .model-viewer-overlay {
         position: fixed;
-        right: 10px;
-        top: auto;
-        bottom: 80px;
-        transform: none;
-        width: 200px;
-        height: 200px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        top: 50%;
+        width: 300px;
+        height: 300px;
+    }
+
+    .model-viewer-label {
+        font-size: 18px;
+        padding: 10px 20px;
     }
 }
