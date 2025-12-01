@@ -1175,9 +1175,9 @@ class EquipmentCheckoutSystem {
             this.html5QrCode = new Html5Qrcode("camera-reader");
 
             const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
+                fps: 30, // Higher fps for better detection
+                qrbox: { width: 500, height: 250 }, // Wider box for barcodes
+                disableFlip: false, // Allow mirrored scanning
                 // Support multiple barcode formats
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.QR_CODE,
@@ -1188,12 +1188,15 @@ class EquipmentCheckoutSystem {
                     Html5QrcodeSupportedFormats.UPC_A,
                     Html5QrcodeSupportedFormats.UPC_E,
                     Html5QrcodeSupportedFormats.CODE_93
-                ]
+                ],
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true // Use native barcode detection if available
+                }
             };
 
             // Start scanning
             this.html5QrCode.start(
-                { facingMode: "user" }, // Use front camera on mobile
+                { facingMode: "user" }, // Front camera as requested
                 config,
                 (decodedText) => {
                     // Success callback - barcode detected
