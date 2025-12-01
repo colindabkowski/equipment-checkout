@@ -18,6 +18,7 @@ class EquipmentCheckoutSystem {
         // Initialize
         this.loadData();
         this.initializeDefaultEquipment();
+        this.initializeDefaultStudents();
         this.setupEventListeners();
         this.renderAll();
     }
@@ -79,6 +80,35 @@ class EquipmentCheckoutSystem {
         this.saveData();
     }
 
+    initializeDefaultStudents() {
+        // Pre-populated student data
+        // To add your students:
+        // 1. Add students manually in the Students tab
+        // 2. Click "Export Students JSON" button
+        // 3. Copy the JSON content from the downloaded file
+        // 4. Replace the empty array below with your student data
+
+        const defaultStudents = [
+            // Example format (remove this and add your exported data):
+            // {
+            //     "name": "John Doe",
+            //     "barcode": "123456",
+            //     "email": "john@school.edu",
+            //     "photo": "data:image/jpeg;base64,...",
+            //     "addedDate": "2025-11-30T00:00:00.000Z"
+            // }
+        ];
+
+        // Only add students that don't already exist
+        defaultStudents.forEach(newStudent => {
+            if (!this.students.some(s => s.barcode === newStudent.barcode)) {
+                this.students.push(newStudent);
+            }
+        });
+
+        this.saveData();
+    }
+
     // ===== EVENT LISTENERS =====
 
     setupEventListeners() {
@@ -118,6 +148,7 @@ class EquipmentCheckoutSystem {
         document.getElementById('equipment-cancel-btn').addEventListener('click', () => this.hideAddEquipmentForm());
         document.getElementById('equipment-search').addEventListener('keyup', () => this.filterEquipment());
         document.getElementById('export-equipment-csv-btn').addEventListener('click', () => this.exportEquipmentCSV());
+        document.getElementById('export-students-json-btn').addEventListener('click', () => this.exportStudentsJSON());
 
         // History
         document.getElementById('history-search').addEventListener('keyup', () => this.filterHistory());
@@ -926,6 +957,31 @@ class EquipmentCheckoutSystem {
         document.body.removeChild(link);
 
         alert(`✅ Exported ${this.equipment.length} equipment items to CSV!`);
+    }
+
+    exportStudentsJSON() {
+        if (this.students.length === 0) {
+            alert('No students to export!');
+            return;
+        }
+
+        // Create JSON string
+        const jsonContent = JSON.stringify(this.students, null, 2);
+
+        // Create download link
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', `students_data_${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        alert(`✅ Exported ${this.students.length} students to JSON!\n\nThis file includes all student data and photos (as base64). You can add this to your code for pre-loading students.`);
     }
 
     // ===== HISTORY/TRANSACTIONS =====
