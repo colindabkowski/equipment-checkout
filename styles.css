@@ -710,7 +710,7 @@ tr:hover {
     border: 3px solid #667eea;
 }
 
-#camera-reader video {
+#camera-reader canvas {
     border-radius: 10px;
 }
 
