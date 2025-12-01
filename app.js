@@ -1193,7 +1193,7 @@ class EquipmentCheckoutSystem {
 
             // Start scanning
             this.html5QrCode.start(
-                { facingMode: "environment" }, // Use back camera on mobile
+                { facingMode: "user" }, // Use front camera on mobile
                 config,
                 (decodedText) => {
                     // Success callback - barcode detected
