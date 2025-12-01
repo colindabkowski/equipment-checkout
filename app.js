@@ -14,7 +14,8 @@ class EquipmentCheckoutSystem {
         this.transactionMode = null; // 'checkout' or 'checkin'
         this.currentStudentCheckouts = [];
         this.currentPhotoData = null; // For photo uploads
-        this.html5QrCode = null; // Camera scanner
+        this.cameraStream = null; // Camera stream
+        this.scannerInterval = null; // Scanner interval
 
         // Initialize
         this.loadData();
@@ -1166,54 +1167,76 @@ class EquipmentCheckoutSystem {
 
     // ===== CAMERA BARCODE SCANNER =====
 
-    openCameraScanner() {
+    async openCameraScanner() {
         const modal = document.getElementById('camera-scanner-modal');
+        const readerDiv = document.getElementById('camera-reader');
         modal.style.display = 'flex';
 
-        // Initialize camera scanner
-        if (typeof Html5Qrcode !== 'undefined') {
-            this.html5QrCode = new Html5Qrcode("camera-reader");
-
-            const config = {
-                fps: 30, // Higher fps for better detection
-                qrbox: { width: 500, height: 250 }, // Wider box for barcodes
-                disableFlip: false, // Allow mirrored scanning
-                // Support multiple barcode formats
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.QR_CODE,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_93
-                ],
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // Use native barcode detection if available
-                }
-            };
-
-            // Start scanning
-            this.html5QrCode.start(
-                { facingMode: "user" }, // Front camera as requested
-                config,
-                (decodedText) => {
-                    // Success callback - barcode detected
-                    this.handleScan(decodedText);
-                    this.closeCameraScanner();
-                },
-                (errorMessage) => {
-                    // Error callback - usually just means no barcode in frame, ignore
-                }
-            ).catch((err) => {
-                console.error("Camera error:", err);
-                alert("Unable to access camera. Please check camera permissions.");
-                this.closeCameraScanner();
+        try {
+            // Get front camera stream
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user" }
             });
-        } else {
-            alert("Camera scanner not available. Please use the USB barcode scanner.");
-            modal.style.display = 'none';
+
+            // Create video element to capture camera feed
+            const videoElement = document.createElement('video');
+            videoElement.srcObject = stream;
+            videoElement.play();
+
+            // Create canvas to flip the video
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            // Wait for video to be ready
+            videoElement.onloadedmetadata = () => {
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+
+                // Create display canvas for user
+                const displayCanvas = document.createElement('canvas');
+                displayCanvas.width = 640;
+                displayCanvas.height = 480;
+                displayCanvas.style.width = '100%';
+                displayCanvas.style.borderRadius = '10px';
+                readerDiv.innerHTML = '';
+                readerDiv.appendChild(displayCanvas);
+                const displayContext = displayCanvas.getContext('2d');
+
+                // Store stream for cleanup
+                this.cameraStream = stream;
+                this.scannerInterval = setInterval(() => {
+                    // Draw flipped video to hidden canvas
+                    context.save();
+                    context.scale(-1, 1); // Flip horizontally
+                    context.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
+                    context.restore();
+
+                    // Draw normal video to display canvas for user
+                    displayContext.drawImage(videoElement, 0, 0, displayCanvas.width, displayCanvas.height);
+
+                    // Try to scan the flipped image
+                    canvas.toBlob((blob) => {
+                        if (blob && typeof Html5Qrcode !== 'undefined') {
+                            const html5QrCode = new Html5Qrcode("temp-reader-" + Date.now());
+                            const file = new File([blob], "scan.png", { type: "image/png" });
+
+                            html5QrCode.scanFile(file, false)
+                                .then((decodedText) => {
+                                    // Success!
+                                    this.handleScan(decodedText);
+                                    this.closeCameraScanner();
+                                })
+                                .catch(() => {
+                                    // No barcode found, keep trying
+                                });
+                        }
+                    }, 'image/png');
+                }, 300); // Scan every 300ms
+            };
+        } catch (err) {
+            console.error("Camera error:", err);
+            alert("Unable to access camera. Please check camera permissions.");
+            this.closeCameraScanner();
         }
     }
 
@@ -1221,14 +1244,22 @@ class EquipmentCheckoutSystem {
         const modal = document.getElementById('camera-scanner-modal');
         modal.style.display = 'none';
 
-        // Stop camera
-        if (this.html5QrCode) {
-            this.html5QrCode.stop().then(() => {
-                this.html5QrCode.clear();
-                this.html5QrCode = null;
-            }).catch((err) => {
-                console.error("Error stopping camera:", err);
-            });
+        // Stop scanning interval
+        if (this.scannerInterval) {
+            clearInterval(this.scannerInterval);
+            this.scannerInterval = null;
+        }
+
+        // Stop camera stream
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+
+        // Clear reader div
+        const readerDiv = document.getElementById('camera-reader');
+        if (readerDiv) {
+            readerDiv.innerHTML = '';
         }
 
         // Refocus on barcode input
