@@ -712,6 +712,8 @@ tr:hover {
 
 #camera-reader video {
     border-radius: 10px;
+    transform: scaleX(-1); /* Mirror the video preview so it appears normal to user */
+    -webkit-transform: scaleX(-1);
 }
 
 @media (max-width: 768px) {
