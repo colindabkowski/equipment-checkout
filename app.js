@@ -14,7 +14,6 @@ class EquipmentCheckoutSystem {
         this.transactionMode = null; // 'checkout' or 'checkin'
         this.currentStudentCheckouts = [];
         this.currentPhotoData = null; // For photo uploads
-        this.html5QrCode = null; // Camera scanner
 
         // Initialize
         this.loadData();
@@ -126,10 +125,6 @@ class EquipmentCheckoutSystem {
                 barcodeInput.value = '';
             }
         });
-
-        // Camera scanning
-        document.getElementById('camera-scan-btn').addEventListener('click', () => this.openCameraScanner());
-        document.getElementById('close-camera-btn').addEventListener('click', () => this.closeCameraScanner());
 
         // Scan tab buttons
         document.getElementById('confirm-checkout-btn').addEventListener('click', () => this.confirmCheckout());
@@ -1162,76 +1157,6 @@ class EquipmentCheckoutSystem {
             const viewer = new Model3DViewer();
             viewer.show(equipmentType, equipmentName);
         }
-    }
-
-    // ===== CAMERA BARCODE SCANNER =====
-
-    openCameraScanner() {
-        const modal = document.getElementById('camera-scanner-modal');
-        modal.style.display = 'flex';
-
-        // Initialize camera scanner
-        if (typeof Html5Qrcode !== 'undefined') {
-            this.html5QrCode = new Html5Qrcode("camera-reader");
-
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                // Support multiple barcode formats
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.QR_CODE,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_93
-                ]
-            };
-
-            // Start scanning
-            this.html5QrCode.start(
-                { facingMode: "environment" }, // Use back camera on mobile
-                config,
-                (decodedText) => {
-                    // Success callback - barcode detected
-                    this.handleScan(decodedText);
-                    this.closeCameraScanner();
-                },
-                (errorMessage) => {
-                    // Error callback - usually just means no barcode in frame, ignore
-                }
-            ).catch((err) => {
-                console.error("Camera error:", err);
-                alert("Unable to access camera. Please check camera permissions.");
-                this.closeCameraScanner();
-            });
-        } else {
-            alert("Camera scanner not available. Please use the USB barcode scanner.");
-            modal.style.display = 'none';
-        }
-    }
-
-    closeCameraScanner() {
-        const modal = document.getElementById('camera-scanner-modal');
-        modal.style.display = 'none';
-
-        // Stop camera
-        if (this.html5QrCode) {
-            this.html5QrCode.stop().then(() => {
-                this.html5QrCode.clear();
-                this.html5QrCode = null;
-            }).catch((err) => {
-                console.error("Error stopping camera:", err);
-            });
-        }
-
-        // Refocus on barcode input
-        setTimeout(() => {
-            document.getElementById('barcode-input').focus();
-        }, 100);
     }
 }
 
