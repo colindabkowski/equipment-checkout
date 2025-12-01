@@ -1176,8 +1176,7 @@ class EquipmentCheckoutSystem {
 
             const config = {
                 fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
+                qrbox: { width: 400, height: 200 },
                 // Support multiple barcode formats
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.QR_CODE,
@@ -1193,7 +1192,7 @@ class EquipmentCheckoutSystem {
 
             // Start scanning
             this.html5QrCode.start(
-                { facingMode: "user" }, // Use front camera on mobile
+                { facingMode: "environment" }, // Use back camera - front camera mirrors image
                 config,
                 (decodedText) => {
                     // Success callback - barcode detected
