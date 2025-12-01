@@ -14,8 +14,6 @@ class EquipmentCheckoutSystem {
         this.transactionMode = null; // 'checkout' or 'checkin'
         this.currentStudentCheckouts = [];
         this.currentPhotoData = null; // For photo uploads
-        this.cameraStream = null; // Camera stream
-        this.scannerInterval = null; // Scanner interval
 
         // Initialize
         this.loadData();
@@ -127,10 +125,6 @@ class EquipmentCheckoutSystem {
                 barcodeInput.value = '';
             }
         });
-
-        // Camera scanning
-        document.getElementById('camera-scan-btn').addEventListener('click', () => this.openCameraScanner());
-        document.getElementById('close-camera-btn').addEventListener('click', () => this.closeCameraScanner());
 
         // Scan tab buttons
         document.getElementById('confirm-checkout-btn').addEventListener('click', () => this.confirmCheckout());
@@ -1163,109 +1157,6 @@ class EquipmentCheckoutSystem {
             const viewer = new Model3DViewer();
             viewer.show(equipmentType, equipmentName);
         }
-    }
-
-    // ===== CAMERA BARCODE SCANNER =====
-
-    async openCameraScanner() {
-        const modal = document.getElementById('camera-scanner-modal');
-        const readerDiv = document.getElementById('camera-reader');
-        modal.style.display = 'flex';
-
-        try {
-            // Get front camera stream
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" }
-            });
-
-            // Create video element to capture camera feed
-            const videoElement = document.createElement('video');
-            videoElement.srcObject = stream;
-            videoElement.play();
-
-            // Create canvas to flip the video
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            // Wait for video to be ready
-            videoElement.onloadedmetadata = () => {
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-
-                // Create display canvas for user
-                const displayCanvas = document.createElement('canvas');
-                displayCanvas.width = 640;
-                displayCanvas.height = 480;
-                displayCanvas.style.width = '100%';
-                displayCanvas.style.borderRadius = '10px';
-                readerDiv.innerHTML = '';
-                readerDiv.appendChild(displayCanvas);
-                const displayContext = displayCanvas.getContext('2d');
-
-                // Store stream for cleanup
-                this.cameraStream = stream;
-                this.scannerInterval = setInterval(() => {
-                    // Draw flipped video to hidden canvas
-                    context.save();
-                    context.scale(-1, 1); // Flip horizontally
-                    context.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
-                    context.restore();
-
-                    // Draw normal video to display canvas for user
-                    displayContext.drawImage(videoElement, 0, 0, displayCanvas.width, displayCanvas.height);
-
-                    // Try to scan the flipped image
-                    canvas.toBlob((blob) => {
-                        if (blob && typeof Html5Qrcode !== 'undefined') {
-                            const html5QrCode = new Html5Qrcode("temp-reader-" + Date.now());
-                            const file = new File([blob], "scan.png", { type: "image/png" });
-
-                            html5QrCode.scanFile(file, false)
-                                .then((decodedText) => {
-                                    // Success!
-                                    this.handleScan(decodedText);
-                                    this.closeCameraScanner();
-                                })
-                                .catch(() => {
-                                    // No barcode found, keep trying
-                                });
-                        }
-                    }, 'image/png');
-                }, 300); // Scan every 300ms
-            };
-        } catch (err) {
-            console.error("Camera error:", err);
-            alert("Unable to access camera. Please check camera permissions.");
-            this.closeCameraScanner();
-        }
-    }
-
-    closeCameraScanner() {
-        const modal = document.getElementById('camera-scanner-modal');
-        modal.style.display = 'none';
-
-        // Stop scanning interval
-        if (this.scannerInterval) {
-            clearInterval(this.scannerInterval);
-            this.scannerInterval = null;
-        }
-
-        // Stop camera stream
-        if (this.cameraStream) {
-            this.cameraStream.getTracks().forEach(track => track.stop());
-            this.cameraStream = null;
-        }
-
-        // Clear reader div
-        const readerDiv = document.getElementById('camera-reader');
-        if (readerDiv) {
-            readerDiv.innerHTML = '';
-        }
-
-        // Refocus on barcode input
-        setTimeout(() => {
-            document.getElementById('barcode-input').focus();
-        }, 100);
     }
 }
 

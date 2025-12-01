@@ -6,7 +6,6 @@
     <title>Equipment Check-In/Out System</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -33,29 +32,13 @@
             <div class="card scan-section">
                 <div class="scan-icon"><img src="wacs-logo.png" alt="WACS Logo" style="width: 120px; height: auto;"></div>
                 <h2>Scan Student Pass or Equipment</h2>
-                <p style="color: #666; margin: 15px 0;">Use your USB barcode scanner or camera to scan</p>
+                <p style="color: #666; margin: 15px 0;">Use your USB barcode scanner to scan</p>
 
-                <div style="display: flex; gap: 10px; align-items: center; max-width: 500px; margin: 0 auto;">
-                    <input type="text"
-                           id="barcode-input"
-                           class="barcode-input"
-                           placeholder="Ready to scan..."
-                           autofocus
-                           style="flex: 1;">
-                    <button class="btn btn-primary" id="camera-scan-btn" style="padding: 15px 20px; font-size: 24px;">📷</button>
-                </div>
-
-                <!-- Camera Scanner Modal -->
-                <div id="camera-scanner-modal" class="camera-modal" style="display: none;">
-                    <div class="camera-modal-content">
-                        <div class="camera-modal-header">
-                            <h3>Scan Barcode with Camera</h3>
-                            <button class="btn btn-secondary" id="close-camera-btn">✕ Close</button>
-                        </div>
-                        <div id="camera-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
-                        <p style="color: #667eea; margin-top: 15px; text-align: center; font-weight: bold; font-size: 16px;">Position barcode within the frame<br><small style="color: #666;">Hold steady for best results</small></p>
-                    </div>
-                </div>
+                <input type="text"
+                       id="barcode-input"
+                       class="barcode-input"
+                       placeholder="Ready to scan..."
+                       autofocus>
 
                 <div id="status-message" class="status-message"></div>
 
